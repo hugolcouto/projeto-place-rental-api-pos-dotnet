@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Exceptions/" />
+    <Folder Include="Services/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../PlaceRentalApi.API.csproj" />
+    <ProjectReference Include="../PlaceRentalApi.Infrastructure/PlaceRentalApi.Infrastructure.csproj" />
+    <ProjectReference Include="../PlaceRentalApi.Core/PlaceRentalApi.Core.csproj" />
+  </ItemGroup>
+
+
+</Project>
