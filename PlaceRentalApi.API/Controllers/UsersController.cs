@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PlaceRentalApi.API.Entities;
 using PlaceRentalApi.API.Models;
-using PlaceRentalApi.API.Persistence;
+using PlaceRentalApi.Core.Entities;
+using PlaceRentalApi.Infrastructure.Persistence;
 
 namespace PlaceRentalApi.API.Controllers
 {

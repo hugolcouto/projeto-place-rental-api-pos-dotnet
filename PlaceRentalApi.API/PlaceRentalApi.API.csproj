@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,11 +22,14 @@
 
   <ItemGroup>
     <Folder Include="Controllers/" />
-    <Folder Include="Persistence\" />
-    <Folder Include="Entities/" />
-    <Folder Include="Enums/" />
     <Folder Include="Middlewares/" />
     <Folder Include="Models/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="PlaceRentalApi.Application/PlaceRentalApi.Application.csproj" />
+    <ProjectReference Include="PlaceRentalApi.Core/PlaceRentalApi.Core.csproj" />
+    <ProjectReference Include="PlaceRentalApi.Infrastructure/PlaceRentalApi.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

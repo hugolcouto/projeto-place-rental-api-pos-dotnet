@@ -2,15 +2,21 @@ using Microsoft.EntityFrameworkCore;
 using PlaceRentalApi.API.Middlewares;
 using PlaceRentalApi.API.Models;
 using PlaceRentalApi.API.Persistence;
+using PlaceRentalApi.Infrastructure.Persistence;
 
 public partial class Program
 {
     private static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+        string connectionString = builder.Configuration.GetConnectionString("DbConnectionString")!;
+
         builder.Services.AddDbContext<PlaceRentalDbContext>(
-            o => o.UseInMemoryDatabase("PlaceRentalDb")
+            o => o.UseSqlServer(connectionString)
         );
+        // builder.Services.AddDbContext<PlaceRentalDbContext>(
+        //     o => o.UseInMemoryDatabase("PlaceRentalDb")
+        // );
         // builder.Services.AddSingleton<PlaceRentalDbContext>();
 
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
