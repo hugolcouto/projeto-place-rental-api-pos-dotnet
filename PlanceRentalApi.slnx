@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="PlaceRentalApi.API/PlaceRentalApi.API.csproj" />
-  <Project Path="PlaceRentalApi.Application/PlaceRentalApi.Application.csproj" />
-  <Project Path="PlaceRentalApi.Core/PlaceRentalApi.Core.csproj" />
-  <Project Path="PlaceRentalApi.Infrastructure/PlaceRentalApi.Infrastructure.csproj" />
-</Solution>
