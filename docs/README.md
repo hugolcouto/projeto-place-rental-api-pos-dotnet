@@ -61,6 +61,7 @@ Permite que classes recebam dependências em vez de criá-las:
 
 - 📖 [Guia Completo](./dependency-injection/DEPENDENCY_INJECTION.md) - Conceitos e padrões
 - 🔥 [Exemplos Avançados](./dependency-injection/DEPENDENCY_INJECTION_ADVANCED.md) - No projeto
+- 🧩 [Configuração por Módulos](./dependency-injection/DEPENDENCY_INJECTION_MODULES.md) - Bootstrap por camada
 - ⚡ [Referência Rápida](./dependency-injection/DEPENDENCY_INJECTION_QUICKREF.md) - Sintaxe
 
 ---

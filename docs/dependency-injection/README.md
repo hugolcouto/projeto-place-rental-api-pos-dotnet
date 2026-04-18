@@ -24,6 +24,15 @@ Casos reais do projeto:
 - Padrão Factory
 - Resolução de dependências
 
+### [DEPENDENCY_INJECTION_MODULES.md](./DEPENDENCY_INJECTION_MODULES.md) - Configuração por Módulos
+
+Como o `Program.cs` usa métodos de extensão para organizar o registro de dependências por camada:
+
+- `AddApplication()`
+- `AddInfrastructure()`
+- Registro do `DbContext`
+- Registro de services da aplicação
+
 ### [DEPENDENCY_INJECTION_QUICKREF.md](./DEPENDENCY_INJECTION_QUICKREF.md) - Referência Rápida
 
 Templates e referências rápidas:
