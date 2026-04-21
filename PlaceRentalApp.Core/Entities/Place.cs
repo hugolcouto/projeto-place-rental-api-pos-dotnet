@@ -6,7 +6,7 @@ namespace PlaceRentalApp.Core.Entities;
 public class Place : BaseEntity
 {
     protected Place() { }
-    public Place(string title, string description, decimal dailyPrice, Address address, int allowedNumberPerson, bool allowPets, string createdBy)
+    public Place(string title, string description, decimal dailyPrice, Address address, int allowedNumberPerson, bool allowPets, int createdBy)
         : base()
     {
         Title = title;
@@ -29,8 +29,8 @@ public class Place : BaseEntity
     public Address Address { get; private set; }
     public int AllowedNumberPerson { get; private set; }
     public bool AllowPets { get; private set; }
-    public string CreatedBy { get; private set; }
-    public User User { get; private set; }
+    public int CreatedBy { get; private set; }
+    public User? User { get; private set; }
     public PlaceStatus Status { get; private set; }
 
     public List<PlaceBook> Books { get; private set; }

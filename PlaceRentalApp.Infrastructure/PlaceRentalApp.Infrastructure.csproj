@@ -16,4 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="../PlaceRentalApp.Core/PlaceRentalApp.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Persistence/Repositories/" />
+  </ItemGroup>
 </Project>

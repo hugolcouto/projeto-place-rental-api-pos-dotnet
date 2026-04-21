@@ -1,364 +1,595 @@
-# 📊 Repository Pattern - Guia Completo
+# 📊 Repository Pattern - Guia Prático
 
-## Introdução
+## O que é Repository Pattern?
 
-O **Repository Pattern** abstrai o acesso a dados, permitindo que a aplicação trabalhe com um repositório genérico em vez de SQL direto.
+O **Repository Pattern** é um padrão de design que **abstrai o acesso a dados**. Ele funciona como um intermediário entre a **lógica de negócio** e o **banco de dados**, permitindo que sua aplicação não se preocupe diretamente com SQL ou Entity Framework.
 
-### 🎯 Objetivo
+### 🎯 Por que usar?
 
-- ✅ Abstrair acesso a dados
-- ✅ Facilitar testes (usar mock repository)
-- ✅ Permitir trocar implementação (BD diferente)
-- ✅ Centralizar queries
+- ✅ **Desacoplamento** - Lógica de negócio separada do acesso a dados
+- ✅ **Testabilidade** - Fácil criar mocks para testes unitários
+- ✅ **Flexibilidade** - Trocar de banco de dados sem mexer no serviço
+- ✅ **Centralização** - Todas as queries em um único lugar
+- ✅ **Manutenibilidade** - Código mais organizado e legível
 
 ---
 
-## 🔍 O Padrão
+## Como Funciona - Fluxo na Prática
 
-### Sem Repository
+```
+┌─────────────┐      ┌──────────────┐      ┌────────────────┐      ┌────────────────┐
+│ Controller  │ ───▶ │  Service     │ ───▶ │   Repository   │ ───▶ │   DbContext    │
+│             │      │              │      │                │      │  (Banco de     │
+│ (HTTP)      │      │ (Regras de   │      │ (Queries SQL)  │      │   Dados)       │
+└─────────────┘      │  Negócio)    │      │                │      └────────────────┘
+                     └──────────────┘      └────────────────┘
+```
+
+### 🚫 SEM Repository (ACOPLADO - ❌ NÃO FAÇA)
 
 ```csharp
-// ❌ Acoplado ao EF
-public class PlaceService
+// ❌ Lógica de BD misturada no Controller
+[HttpPost]
+public IActionResult CreatePlace(CreatePlaceInputModel model)
 {
-    private readonly PlaceRentalDbContext _context;
+    // Lógica de BD direto no Controller
+    var place = new Place(model.Title, model.Description, ...);
+    _context.Places.Add(place);  // ❌ DbContext direto!
+    _context.SaveChanges();
 
-    public Place GetById(int id)
-    {
-        // Lógica de BD misturada no serviço
-        return _context.Places
-            .Include(p => p.User)
-            .SingleOrDefault(p => p.Id == id);
-    }
+    return Ok(place.Id);
 }
 ```
 
+**Problemas:**
+
+- Controller conhece detalhes do banco
+- Impossível testar sem banco real
+- Código duplicado em vários controllers
+
 ---
 
-### Com Repository
+### ✅ COM Repository (DESACOPLADO - ✅ FAÇA)
 
 ```csharp
-// ✅ Desacoplado
-public interface IPlaceRepository
+// ✅ Controller limpo - apenas recebe requisição HTTP
+[HttpPost]
+public IActionResult CreatePlace(CreatePlaceInputModel model)
 {
-    Place GetById(int id);
-    List<Place> GetAll();
-    void Add(Place place);
-    void Update(Place place);
-    void Delete(int id);
+    var result = _placeService.Inset(model);
+    return Ok(result);
 }
 
+// ✅ Service com lógica de negócio
+public class PlaceService : IPlaceService
+{
+    private readonly IPlaceRepository _placeRepository;
+
+    public PlaceService(IPlaceRepository placeRepository)
+        => _placeRepository = placeRepository;
+
+    public ResultViewModel<int> Inset(CreatePlaceInputModel model)
+    {
+        // Lógica de negócio: transformar model em Entity
+        var address = new Address(
+            model.Address.Street,
+            model.Address.Number,
+            // ...
+        );
+
+        var place = new Place(
+            model.Title,
+            model.Description,
+            model.DailyPrice,
+            address,
+            model.AllowedNumberPerson,
+            model.AllowPets,
+            model.CreatedBy
+        );
+
+        // ✅ Delegado ao Repository!
+        _placeRepository.Add(place);
+
+        return ResultViewModel<int>.Success(place.Id);
+    }
+}
+
+// ✅ Repository com lógica de acesso a dados
 public class PlaceRepository : IPlaceRepository
 {
     private readonly PlaceRentalDbContext _context;
 
     public PlaceRepository(PlaceRentalDbContext context)
-    {
-        _context = context;
-    }
+        => _context = context;
 
-    public Place GetById(int id)
-    {
-        return _context.Places
-            .Include(p => p.User)
-            .SingleOrDefault(p => p.Id == id);
-    }
-
-    public List<Place> GetAll()
-    {
-        return _context.Places.ToList();
-    }
-
-    public void Add(Place place)
+    public int Add(Place place)
     {
         _context.Places.Add(place);
         _context.SaveChanges();
+        return place.Id;
     }
 }
 ```
 
 ---
 
-## 🏗️ Estrutura no Projeto
+## 🏗️ Estrutura no Projeto PlaceRental
 
-No PlaceRental, o padrão é implícito (usa DbContext direto), mas pode ser implementado assim:
+O projeto implementa Repository Pattern em **3 camadas**:
+
+```
+PlaceRentalApp.Core
+├── Entities/          (Place, User, PlaceBook, etc.)
+└── Repositories/      ← INTERFACES (contrato)
+    ├── IPlaceRepository.cs
+    └── IUserRepository.cs
+
+PlaceRentalApp.Application
+└── Services/          ← LÓGICA DE NEGÓCIO
+    ├── IPlaceService.cs
+    └── PlaceService.cs
+
+PlaceRentalApp.Infrastructure
+└── Persistence/       ← IMPLEMENTAÇÃO
+    ├── PlaceRentalDbContext.cs
+    └── Repositories/
+        └── PlaceRepository.cs
+```
+
+---
+
+## 📋 Interface do Repository (Contrato)
+
+**Arquivo:** `PlaceRentalApp.Core/Repositories/IPlaceRepository.cs`
 
 ```csharp
-// Interface (Application Layer)
 public interface IPlaceRepository
 {
-    Place GetById(int id);
-    List<Place> GetAllAvailable(string search, DateTime startDate, DateTime endDate);
-    void Add(Place place);
-    void Update(Place place);
-    void Delete(int id);
-}
+    // READ
+    Place? GetById(int id);
+    List<Place>? GetAllAvailable(string search, DateTime startDate, DateTime endDate);
 
-// Implementação (Infrastructure Layer)
+    // CREATE
+    int Add(Place place);
+    void AddBook(PlaceBook book);
+    void AddAmenity(PlaceAmenity amenity);
+
+    // UPDATE
+    void Update(Place place);
+
+    // DELETE
+    void Delete(Place place);
+}
+```
+
+**Por que uma interface?**
+
+- Define o contrato (quais métodos existem)
+- Permite injetar dependência
+- Facilita criar mocks para testes
+
+---
+
+## 🔧 Implementação do Repository
+
+**Arquivo:** `PlaceRentalApp.Infrastructure/Persistence/Repositories/PlaceRepository.cs`
+
+```csharp
 public class PlaceRepository : IPlaceRepository
 {
     private readonly PlaceRentalDbContext _context;
 
     public PlaceRepository(PlaceRentalDbContext context)
+        => _context = context;
+
+    // CREATE
+    public int Add(Place place)
     {
-        _context = context;
+        _context.Places.Add(place);
+        _context.SaveChanges();
+        return place.Id;
     }
 
-    public Place GetById(int id)
+    public void AddBook(PlaceBook book)
     {
-        return _context.Places.SingleOrDefault(p => p.Id == id);
+        _context.PlaceBooks.Add(book);
+        _context.SaveChanges();
     }
 
-    public List<Place> GetAllAvailable(
-        string search,
-        DateTime startDate,
-        DateTime endDate)
+    public void AddAmenity(PlaceAmenity amenity)
     {
-        return _context.Places
+        _context.PlaceAmenities.Add(amenity);
+        _context.SaveChanges();
+    }
+
+    // READ - Buscar por ID com relacionamentos
+    public Place? GetById(int id)
+    {
+        Place? place = _context
+            .Places
+            .Include(p => p.Amenities)    // Carrega amenidades
+            .Include(p => p.User)          // Carrega usuário
+            .SingleOrDefault(p => p.Id == id);
+
+        return place;
+    }
+
+    // READ - Buscar disponibilidades (query complexa!)
+    public List<Place>? GetAllAvailable(string search, DateTime startDate, DateTime endDate)
+    {
+        List<Place> availablePlaces = _context
+            .Places
             .Include(p => p.User)
             .Where(p =>
+                // Contém o termo de busca
                 p.Title.Contains(search) &&
-                !p.Books.Any(b => /* conflito de datas */) &&
-                !p.IsDeleted)
+                // Não tem reservas que conflitem com datas
+                !p.Books.Any(b =>
+                    (startDate >= b.StartDate && startDate <= b.EndDate) ||
+                    (endDate >= b.StartDate && endDate <= b.EndDate) ||
+                    (startDate <= b.StartDate && endDate >= b.EndDate)
+                ) &&
+                // Não está deletado
+                !p.IsDeleted
+            )
             .ToList();
+
+        return availablePlaces;
     }
 
-    public void Add(Place place)
-    {
-        _context.Places.Add(place);
-        _context.SaveChanges();
-    }
-
+    // UPDATE
     public void Update(Place place)
     {
         _context.Places.Update(place);
         _context.SaveChanges();
     }
 
-    public void Delete(int id)
+    // DELETE (soft delete)
+    public void Delete(Place place)
     {
-        var place = _context.Places.Find(id);
-        if (place != null)
-        {
-            place.IsDeleted = true;
-            _context.SaveChanges();
-        }
-    }
-}
-```
-
----
-
-## 📋 Operações CRUD
-
-### CREATE
-
-```csharp
-public interface IPlaceRepository
-{
-    void Add(Place place);
-}
-
-public class PlaceRepository : IPlaceRepository
-{
-    public void Add(Place place)
-    {
-        _context.Places.Add(place);
+        _context.Places.Update(place);  // Marca como deletado
         _context.SaveChanges();
     }
 }
 ```
 
+**Pontos importantes:**
+
+- Todas as queries SQL estão aqui (`.Where()`, `.Include()`, etc)
+- `SaveChanges()` persiste no BD
+- O Service não conhece EntityFramework
+- Fácil de testar com mock
+
 ---
 
-### READ
+## 💉 Dependency Injection - Como Registrar
+
+### 1️⃣ Registrar Repository em `InfrastructureModule.cs`
+
+**Arquivo:** `PlaceRentalApp.Infrastructure/InfrastructureModule.cs`
 
 ```csharp
-public interface IPlaceRepository
+public static class InfrastructureModule
 {
-    Place GetById(int id);
-    List<Place> GetAll();
-    List<Place> GetByTitle(string title);
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services
+            .AddData(configuration)
+            .AddRepositories();
+
+        return services;
+    }
+
+    private static IServiceCollection AddRepositories(
+        this IServiceCollection services)
+    {
+        services.AddScoped<IPlaceRepository, PlaceRepository>();
+        // Adicionar o de User
+        // services.AddScoped<IUserRepository, UserRepository>();
+
+        return services;
+    }
 }
+```
 
-public class PlaceRepository : IPlaceRepository
+**O que significa `AddScoped`?**
+
+- **Uma instância por requisição HTTP**
+- Ideal para trabalhar com banco de dados
+- Cada HTTP request cria/usa uma única instância
+
+---
+
+### 2️⃣ Registrar Service em `ApplicationModule.cs`
+
+**Arquivo:** `PlaceRentalApp.Application/ApplicationModule.cs`
+
+```csharp
+public static class ApplicationModule
 {
-    public Place GetById(int id)
+    public static IServiceCollection AddApplication(
+        this IServiceCollection services)
     {
-        return _context.Places.SingleOrDefault(p => p.Id == id);
+        services.AddService();
+        return services;
     }
 
-    public List<Place> GetAll()
+    private static IServiceCollection AddService(
+        this IServiceCollection services)
     {
-        return _context.Places.ToList();
-    }
-
-    public List<Place> GetByTitle(string title)
-    {
-        return _context.Places
-            .Where(p => p.Title.Contains(title))
-            .ToList();
+        services.AddScoped<IPlaceService, PlaceService>();
+        return services;
     }
 }
 ```
 
 ---
 
-### UPDATE
+### 3️⃣ Ativar os Módulos em `Program.cs`
+
+**Arquivo:** `PlaceRentalApp.API/Program.cs`
 
 ```csharp
-public interface IPlaceRepository
-{
-    void Update(Place place);
-}
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-public class PlaceRepository : IPlaceRepository
-{
-    public void Update(Place place)
-    {
-        _context.Places.Update(place);
-        _context.SaveChanges();
-    }
-}
+// ✅ Ativa a injeção de dependência
+builder.Services
+    .AddApplication()           // Registra PlaceService
+    .AddInfrastructure(builder.Configuration);  // Registra PlaceRepository
+
+// ... resto do código
 ```
 
 ---
 
-### DELETE
+### 4️⃣ Usar no Controller
+
+**Arquivo:** `PlaceRentalApp.API/Controllers/PlacesController.cs`
 
 ```csharp
-public interface IPlaceRepository
+[ApiController]
+[Route("api/[controller]")]
+public class PlacesController : ControllerBase
 {
-    void Delete(int id);
-}
+    private readonly IPlaceService _placeService;
 
-public class PlaceRepository : IPlaceRepository
-{
-    public void Delete(int id)
+    // ✅ Service é injetado automaticamente
+    public PlacesController(IPlaceService placeService)
+        => _placeService = placeService;
+
+    [HttpPost]
+    public IActionResult CreatePlace(CreatePlaceInputModel model)
     {
-        var place = _context.Places.Find(id);
-        if (place != null)
-        {
-            _context.Places.Remove(place);
-            _context.SaveChanges();
-        }
+        // ✅ Service usa Repository internamente
+        var result = _placeService.Inset(model);
+        return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetPlaceById(int id)
+    {
+        var result = _placeService.GetById(id);
+        return Ok(result);
     }
 }
 ```
 
----
+**Fluxo completo:**
 
-## 💉 Usando com Dependency Injection
-
-```csharp
-// Program.cs
-builder.Services.AddScoped<IPlaceRepository, PlaceRepository>();
-
-// Uso em Service
-public class PlaceService
-{
-    private readonly IPlaceRepository _repository;
-
-    public PlaceService(IPlaceRepository repository)
-    {
-        _repository = repository;
-    }
-
-    public ResultViewModel<Place> GetById(int id)
-    {
-        var place = _repository.GetById(id);
-        if (place == null)
-            return ResultViewModel<Place>.Error(null, "Não encontrado");
-
-        return ResultViewModel<Place>.Success(place);
-    }
-}
+```
+1. Controller pede IPlaceService
+   ↓
+2. DI Container injetar PlaceService
+   ↓
+3. PlaceService pede IPlaceRepository
+   ↓
+4. DI Container injetar PlaceRepository
+   ↓
+5. PlaceRepository acessa DbContext
+   ↓
+6. Query executada no banco
 ```
 
 ---
 
-## 🧪 Testando com Mock
+## 🧪 Testando com Mock Repository
+
+A grande vantagem do Repository Pattern é **testar sem banco de dados real**!
 
 ```csharp
 [TestClass]
 public class PlaceServiceTests
 {
     [TestMethod]
-    public void GetById_WithValidId_ReturnsPlace()
+    public void Inset_WithValidPlace_ReturnsSuccessWithId()
     {
-        // Arrange
+        // 1. ARRANGE - Preparar mock e dados
         var mockRepository = new Mock<IPlaceRepository>();
         mockRepository
-            .Setup(r => r.GetById(1))
-            .Returns(new Place { Id = 1, Title = "Casa" });
+            .Setup(r => r.Add(It.IsAny<Place>()))
+            .Callback<Place>(p => p.Id = 1);  // Simula ID gerado
 
         var service = new PlaceService(mockRepository.Object);
 
-        // Act
+        var address = new Address("Rua X", 123, "12345", "Dist", "City", "SP", "BR");
+        var model = new CreatePlaceInputModel
+        {
+            Title = "Casa Bonita",
+            Description = "Descrição",
+            DailyPrice = 100,
+            Address = address,
+            AllowedNumberPerson = 4,
+            AllowPets = true,
+            CreatedBy = 1
+        };
+
+        // 2. ACT - Executar ação
+        var result = service.Inset(model);
+
+        // 3. ASSERT - Verificar resultado
+        Assert.IsTrue(result.IsSuccess);
+        Assert.AreEqual(1, result.Data);
+        mockRepository.Verify(r => r.Add(It.IsAny<Place>()), Times.Once);
+    }
+
+    [TestMethod]
+    public void GetById_WithValidId_ReturnsPlace()
+    {
+        // 1. ARRANGE
+        var place = new Place("Casa", "Desc", 100,
+            new Address("Rua", 1, "12345", "Dist", "City", "SP", "BR"),
+            4, true, 1);
+        place.Id = 1;
+
+        var mockRepository = new Mock<IPlaceRepository>();
+        mockRepository
+            .Setup(r => r.GetById(1))
+            .Returns(place);
+
+        var service = new PlaceService(mockRepository.Object);
+
+        // 2. ACT
         var result = service.GetById(1);
 
-        // Assert
-        Assert.IsTrue(result.IsSuccess);
+        // 3. ASSERT
+        Assert.IsNotNull(result.Data);
         Assert.AreEqual("Casa", result.Data.Title);
     }
 }
 ```
 
+**Benefícios:**
+
+- ✅ Testa sem banco de dados real
+- ✅ Testa mais rápido (mock é instantâneo)
+- ✅ Isola a lógica do serviço
+- ✅ Controla respostas do repositório
+
 ---
 
 ## ✅ Boas Práticas
 
-### ✅ DO
+### ✅ FAZER (DO's)
 
 ```csharp
-// ✅ Interface para abstração
-public interface IPlaceRepository { }
+// ✅ 1. Sempre use interfaces para repositories
+public interface IPlaceRepository
+{
+    Place? GetById(int id);
+    int Add(Place place);
+}
 
-// ✅ Injetar repository no service
-public PlaceService(IPlaceRepository repository) { }
-
-// ✅ Um repository por entidade
+// ✅ 2. Um repository por entidade principal
 public class PlaceRepository : IPlaceRepository { }
 public class UserRepository : IUserRepository { }
+public class BookRepository : IBookRepository { }
 
-// ✅ Queries complexas no repository
-public List<Place> GetAllAvailable(...) { }
+// ✅ 3. Injetar repository no serviço (não no controller!)
+public class PlaceService
+{
+    private readonly IPlaceRepository _repository;
+
+    public PlaceService(IPlaceRepository repository)
+        => _repository = repository;
+}
+
+// ✅ 4. Colocar queries complexas no repository
+public List<Place>? GetAllAvailable(string search, DateTime startDate, DateTime endDate)
+{
+    return _context
+        .Places
+        .Include(p => p.User)
+        .Where(p =>
+            p.Title.Contains(search) &&
+            !p.Books.Any(b => /* lógica complexa */ ) &&
+            !p.IsDeleted
+        )
+        .ToList();
+}
+
+// ✅ 5. Usar Result Pattern para retornos
+public ResultViewModel<int> Inset(CreatePlaceInputModel model)
+{
+    var place = new Place(...);
+    var id = _repository.Add(place);
+    return ResultViewModel<int>.Success(id);
+}
 ```
 
-### ❌ DON'T
+### ❌ NÃO FAZER (DON'Ts)
 
 ```csharp
-// ❌ Sem interface
-public class PlaceRepository { }
-
-// ❌ Um repository para tudo
-public class GeneralRepository { }
-
-// ❌ Lógica de negócio no repository
-public void CreateAndNotify(Place place) { }
-
-// ❌ Queries no service
-public ResultViewModel<List<Place>> GetAll()
+// ❌ 1. NÃO use DbContext direto no Service/Controller
+public IActionResult CreatePlace(CreatePlaceInputModel model)
 {
-    return _context.Places.ToList();
+    _context.Places.Add(new Place(...));  // ❌ ERRADO!
+    _context.SaveChanges();
+}
+
+// ❌ 2. NÃO faça queries no Service
+public class PlaceService
+{
+    public List<Place> Search(string term)
+    {
+        return _context.Places  // ❌ ERRADO!
+            .Where(p => p.Title.Contains(term))
+            .ToList();
+    }
+}
+
+// ❌ 3. NÃO crie repository genérico para tudo
+public class GenericRepository<T> { }  // ❌ Muito abstrato!
+
+// ❌ 4. NÃO retorne DbSet ou IQueryable do repository
+public IQueryable<Place> GetAll()  // ❌ Expõe EF!
+{
+    return _context.Places;
+}
+
+// ❌ 5. NÃO misture lógica de negócio com acesso a dados
+public void CreateAndNotifyPlaceAdded(Place place)
+{
+    _context.Places.Add(place);
+    _context.SaveChanges();
+    SendEmail(place.User.Email);  // ❌ Misturado!
 }
 ```
 
 ---
 
-## 🎓 Conclusão
+## 📊 Resumo: Benefícios Práticos
 
-Repository Pattern:
-
-- 📦 Abstrai acesso a dados
-- 🧪 Facilita testes
-- 🔄 Permite trocar BD facilmente
-- 📝 Centraliza queries
-
-**No PlaceRental**, pode ser implementado para melhor testabilidade!
+| Benefício            | Sem Repository     | Com Repository         |
+| -------------------- | ------------------ | ---------------------- |
+| **Testar Serviço**   | Precisa de BD real | Mock em segundos       |
+| **Trocar BD**        | Refatorar tudo     | Trocar 1 implementação |
+| **Entender Código**  | Queries espalhadas | Tudo centralizado      |
+| **Reutilizar Query** | Copiar/colar       | Chamar método          |
+| **Manutenibilidade** | Difícil            | Fácil                  |
 
 ---
 
-**Documento criado em**: 16 de Abril de 2026  
-**Versão**: 1.0  
-**Status**: ✅ Completo
+## 🎯 Conclusão
+
+O **Repository Pattern** é essencial em aplicações profissionais porque:
+
+- 📦 **Abstração** - Separa acesso a dados de lógica de negócio
+- 🧪 **Testabilidade** - Testa sem banco real
+- 🔄 **Flexibilidade** - Trocar BD sem quebrar serviço
+- 📝 **Organização** - Código estruturado e legível
+- 🚀 **Performance** - Queries otimizadas em um único lugar
+
+**No PlaceRental**, o padrão permite que:
+
+- PlaceService foque em regras de negócio
+- PlaceRepository foque em queries SQL/EF
+- Controllers foquem em receber/retornar HTTP
+
+---
+
+**Documento atualizado em**: 21 de Abril de 2026  
+**Versão**: 2.0  
+**Status**: ✅ Completo com exemplos reais do projeto

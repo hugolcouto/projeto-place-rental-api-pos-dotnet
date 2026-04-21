@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PlaceRentalApp.API.Persistence;
+using PlaceRentalApp.Core.Repositories;
+using PlaceRentalApp.Infrastructure.Persistence.Repositories;
 
 namespace PlaceRentalApp.Infrastructure;
 
@@ -13,7 +15,9 @@ public static class InfrastructureModule
         IConfiguration configuration
     )
     {
-        services.AddData(configuration);
+        services
+            .AddData(configuration)
+            .AddRepositories();
 
         return services;
     }
@@ -32,6 +36,13 @@ public static class InfrastructureModule
             o => o.UseSqlServer(connectionString)
         );
 
+        return services;
+    }
+
+    private static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        services.AddScoped<IPlaceRepository, PlaceRepository>();
+        // Adicionar o de User
         return services;
     }
 }

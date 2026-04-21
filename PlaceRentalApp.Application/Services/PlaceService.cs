@@ -5,19 +5,20 @@ using PlaceRentalApp.Core.Entities;
 using PlaceRentalApp.Core.ValueObjects;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using PlaceRentalApp.Core.Repositories;
 
 namespace PlaceRentalApp.Application.Services;
 
 public class PlaceService : IPlaceService
 {
-    private readonly PlaceRentalDbContext _context;
+    private readonly IPlaceRepository _placeRepository;
 
-    public PlaceService(PlaceRentalDbContext context) => _context = context;
+    public PlaceService(IPlaceRepository placeRepository) => _placeRepository = placeRepository;
 
     // CREATE
     public ResultViewModel<int> Inset(CreatePlaceInputModel model)
     {
-        var address = new Address(
+        Address address = new Address(
             model.Address.Street,
             model.Address.Number,
             model.Address.ZipCode,
@@ -27,7 +28,7 @@ public class PlaceService : IPlaceService
             model.Address.Country
         );
 
-        var place = new Place(
+        Place place = new Place(
             model.Title,
             model.Description,
             model.DailyPrice,
@@ -37,36 +38,39 @@ public class PlaceService : IPlaceService
             model.CreatedBy
         );
 
-        _context.Places.Add(place);
-        _context.SaveChanges();
+        _placeRepository.Add(place);
 
         return ResultViewModel<int>.Success(place.Id);
     }
 
     public ResultViewModel Book(int id, CreateBookInputModel model)
     {
-        bool exists = _context.Places.Any(p => p.Id == id);
+        Place? place = _placeRepository.GetById(id);
 
-        if (!exists) return ResultViewModel.Error("Not Found");
+        if (place is null) return ResultViewModel.Error("Not Found");
 
-        PlaceBook book = new PlaceBook(model.IdUser, model.IdPlace, model.StartDate, model.EndDate, model.Comments);
+        PlaceBook book = new PlaceBook(
+            model.IdUser,
+            model.IdPlace,
+            model.StartDate,
+            model.EndDate,
+            model.Comments
+        );
 
-        _context.PlaceBooks.Add(book);
-        _context.SaveChanges();
+        _placeRepository.AddBook(book);
 
         return ResultViewModel.Success();
     }
 
     public ResultViewModel<int> InsertAmenity(int id, CreatePlaceAmenityInputModel model)
     {
-        bool exists = _context.Places.Any(p => p.Id == id);
+        Place? place = _placeRepository.GetById(id);
 
-        if (!exists) return (ResultViewModel<int>)ResultViewModel.Error("Not Found");
+        if (place is null) return (ResultViewModel<int>)ResultViewModel.Error("Not Found");
 
         PlaceAmenity amenity = new PlaceAmenity(model.Description, id);
 
-        _context.PlaceAmenities.Add(amenity);
-        _context.SaveChanges();
+        _placeRepository.AddAmenity(amenity);
 
         return ResultViewModel<int>.Success(amenity.Id);
     }
@@ -75,20 +79,9 @@ public class PlaceService : IPlaceService
     // READ
     public ResultViewModel<List<PlaceViewModel>> GetAllAvailable(string search, DateTime startDate, DateTime endDate)
     {
-        List<Place> availablePlaces = _context
-            .Places
-            .Include(p => p.User)
-            .Where(p =>
-                p.Title.Contains(search) &&
-                !p.Books.Any(b =>
-                (startDate >= b.StartDate && startDate <= b.EndDate) ||
-                (endDate >= b.StartDate && endDate <= b.EndDate) ||
-                (startDate <= b.StartDate && endDate >= b.EndDate))
-                && !p.IsDeleted
-            )
-            .ToList();
+        List<Place>? availablePlaces = _placeRepository.GetAllAvailable(search, startDate, endDate);
 
-        List<PlaceViewModel>? model = availablePlaces.Select(
+        List<PlaceViewModel>? model = availablePlaces!.Select(
             PlaceViewModel.FromEntity
         ).ToList()!;
 
@@ -97,7 +90,7 @@ public class PlaceService : IPlaceService
 
     public ResultViewModel<PlaceDetailsViewModel?> GetById(int id)
     {
-        Place? place = _context.Places.SingleOrDefault(p => p.Id == id);
+        Place place = _placeRepository.GetById(id)!;
 
         return ResultViewModel<PlaceDetailsViewModel?>.Success(
             PlaceDetailsViewModel.FromEntity(place)
@@ -107,16 +100,13 @@ public class PlaceService : IPlaceService
     // UPDATE
     public ResultViewModel Update(int id, UpdatePlaceInputModel model)
     {
-        Place? place = _context
-            .Places
-            .SingleOrDefault(p => p.Id == id);
+        Place? place = _placeRepository.GetById(id);
 
         if (place is null) ResultViewModel.Error("Not Found");
 
         place!.Update(model.Title, model.Description, model.DailyPrice);
 
-        _context.Places.Update(place!);
-        _context.SaveChanges();
+        _placeRepository.Update(place);
 
         return ResultViewModel.Success();
     }
@@ -125,16 +115,13 @@ public class PlaceService : IPlaceService
     // DELETE
     public ResultViewModel Delete(int id)
     {
-        var place = _context
-            .Places
-            .SingleOrDefault(p => p.Id == id);
+        Place? place = _placeRepository.GetById(id);
 
         if (place is null) return ResultViewModel.Error("Not Found");
 
         place.SetAsDeleted();
 
-        _context.Places.Update(place);
-        _context.SaveChanges();
+        _placeRepository.Delete(place);
 
         return ResultViewModel.Success();
     }

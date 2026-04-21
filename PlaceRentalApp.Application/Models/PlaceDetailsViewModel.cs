@@ -13,7 +13,7 @@ public class PlaceDetailsViewModel
         string address,
         int allowedNumberPerson,
         bool allowPets,
-        string createdBy,
+        int createdBy,
         List<string> amenities
     )
     {
@@ -35,7 +35,7 @@ public class PlaceDetailsViewModel
     public string Address { get; set; }
     public int AllowedNumberPerson { get; set; }
     public bool AllowPets { get; set; }
-    public string CreatedBy { get; set; }
+    public int CreatedBy { get; set; }
     public List<string> Amenities { get; set; }
 
     public static PlaceDetailsViewModel? FromEntity(Place? entity)
@@ -56,7 +56,7 @@ public class PlaceDetailsViewModel
 
 public class PlaceViewModel
 {
-    public PlaceViewModel(int id, string title, string description, decimal dailyPrice, string address, string createdBy)
+    public PlaceViewModel(int id, string title, string description, decimal dailyPrice, string address, int createdBy)
     {
         Id = id;
         Title = title;
@@ -71,15 +71,15 @@ public class PlaceViewModel
     public string Description { get; set; }
     public decimal DailyPrice { get; set; }
     public string Address { get; set; }
-    public string CreatedBy { get; set; }
+    public int CreatedBy { get; set; }
 
     public static PlaceViewModel? FromEntity(Place? entity)
          => new(
-                entity.Id,
+                entity!.Id,
                 entity.Title,
                 entity.Description,
                 entity.DailyPrice,
                 entity.Address.GetFullAddress(),
-                entity.User.FullName
+                entity.CreatedBy
             );
 }

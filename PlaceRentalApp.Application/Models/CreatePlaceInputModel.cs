@@ -8,7 +8,7 @@ public class CreatePlaceInputModel
     public AddressInputModel Address { get; set; }
     public int AllowedNumberPerson { get; set; }
     public bool AllowPets { get; set; }
-    public string CreatedBy { get; set; }
+    public int CreatedBy { get; set; }
 }
 
 public class AddressInputModel

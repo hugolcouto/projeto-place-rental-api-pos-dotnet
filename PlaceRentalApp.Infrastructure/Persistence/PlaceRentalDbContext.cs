@@ -32,7 +32,7 @@ namespace PlaceRentalApp.API.Persistence
 
                 e.HasOne(p => p.User)
                     .WithMany(u => u.Places)
-                    .HasForeignKey(p => p.Id)
+                    .HasForeignKey(p => p.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 e.OwnsOne(p => p.Address, a =>
