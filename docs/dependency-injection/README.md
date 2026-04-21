@@ -1,48 +1,27 @@
-# 💉 Dependency Injection - Índice
+# Dependency Injection - Indice
 
-Documentação sobre **Dependency Injection (DI)** implementado no projeto PlaceRental.
+Documentacao de DI usada no PlaceRental.
 
-## 📚 Documentos
+## Arquivos desta pasta
 
-### [DEPENDENCY_INJECTION.md](./DEPENDENCY_INJECTION.md) - Guia Completo
+### [DEPENDENCY_INJECTION.md](./DEPENDENCY_INJECTION.md)
 
-Explicação profunda sobre Dependency Injection:
+Guia principal com:
 
-- O que é e por que usar
-- Tipos de injeção (Constructor, Method, Property)
-- Ciclo de vida (Transient, Scoped, Singleton)
-- Container de DI do .NET
-- Vantagens e desvantagens
+- fundamentos de DI no projeto
+- ciclos de vida utilizados
+- exemplos reais de registro e injecao
+- erros comuns e diagnostico
 
-### [DEPENDENCY_INJECTION_ADVANCED.md](./DEPENDENCY_INJECTION_ADVANCED.md) - Exemplos Avançados
+### [DEPENDENCY_INJECTION_MODULES.md](./DEPENDENCY_INJECTION_MODULES.md)
 
-Casos reais do projeto:
+Guia de organizacao por modulos com:
 
-- Configuração no Program.cs
-- Injeção de DbContext
-- Injeção de serviços
-- Padrão Factory
-- Resolução de dependências
-
-### [DEPENDENCY_INJECTION_MODULES.md](./DEPENDENCY_INJECTION_MODULES.md) - Configuração por Módulos
-
-Como o `Program.cs` usa métodos de extensão para organizar o registro de dependências por camada:
-
-- `AddApplication()`
-- `AddInfrastructure()`
-- Registro do `DbContext`
-- Registro de services da aplicação
-
-### [DEPENDENCY_INJECTION_QUICKREF.md](./DEPENDENCY_INJECTION_QUICKREF.md) - Referência Rápida
-
-Templates e referências rápidas:
-
-- Sintaxe para registrar dependências
-- Quando usar cada ciclo de vida
-- Erros comuns
-- Debugging
+- fluxo `Program.cs -> AddApplication -> AddInfrastructure`
+- responsabilidades por camada
+- checklist de cadastro de dependencias
+- troubleshooting de falhas de construcao
 
 ---
 
-**Tempo total de leitura**: ~20 minutos  
-**Nível**: Intermediário
+Tempo estimado: 20 a 30 minutos

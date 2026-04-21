@@ -16,6 +16,7 @@ public static class ApplicationModule
     public static IServiceCollection AddService(this IServiceCollection services)
     {
         services.AddScoped<IPlaceService, PlaceService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

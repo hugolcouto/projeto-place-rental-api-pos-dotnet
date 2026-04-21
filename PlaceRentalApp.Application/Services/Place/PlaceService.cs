@@ -1,10 +1,7 @@
-using PlaceRentalApp.API.Persistence;
-using PlaceRentalApp.Application.Exceptions;
 using PlaceRentalApp.Application.Models;
 using PlaceRentalApp.Core.Entities;
 using PlaceRentalApp.Core.ValueObjects;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using PlaceRentalApp.Core.Repositories;
 
 namespace PlaceRentalApp.Application.Services;

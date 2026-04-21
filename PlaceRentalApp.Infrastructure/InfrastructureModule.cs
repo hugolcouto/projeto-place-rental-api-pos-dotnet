@@ -41,8 +41,10 @@ public static class InfrastructureModule
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<IPlaceRepository, PlaceRepository>();
-        // Adicionar o de User
+        services
+            .AddScoped<IPlaceRepository, PlaceRepository>()
+            .AddScoped<IUserRepository, UserRepository>();
+
         return services;
     }
 }
