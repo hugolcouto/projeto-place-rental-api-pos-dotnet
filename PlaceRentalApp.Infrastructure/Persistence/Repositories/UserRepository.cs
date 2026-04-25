@@ -20,6 +20,15 @@ public class UserRepository : IUserRepository
         return user;
     }
 
+    public User? GetUserByAuth(string email, string hash)
+    {
+        User? user = _context
+            .Users
+            .SingleOrDefault(u => u.Email == email && u.Password == hash);
+
+        return user;
+    }
+
     public int Post(User user)
     {
         _context.Users.Add(user);

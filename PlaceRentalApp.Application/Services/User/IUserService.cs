@@ -7,4 +7,5 @@ public interface IUserService
 {
     ResultViewModel<UserDetailsViewModel?> GetById(int id);
     ResultViewModel<int> Post(User user);
+    ResultViewModel<LoginViewModel> Login(LoginInputModel model);
 }

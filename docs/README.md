@@ -7,6 +7,7 @@ Este indice centraliza os guias existentes na pasta `docs`.
 ```text
 docs/
 ├── clean-architecture/
+├── authentication/
 ├── dependency-injection/
 ├── dto-viewmodel/
 ├── entity-framework/
@@ -26,6 +27,11 @@ docs/
 
 - [Indice](./clean-architecture/README.md)
 - [Guia principal](./clean-architecture/CLEAN_ARCHITECTURE.md)
+
+### Authentication / JWT
+
+- [Indice](./authentication/README.md)
+- [Guia principal](./authentication/JWT_AUTHENTICATION.md)
 
 ### Dependency Injection
 

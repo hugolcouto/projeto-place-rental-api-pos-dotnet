@@ -7,4 +7,5 @@ public interface IUserRepository
 {
     User? GetById(int id);
     int Post(User user);
+    User? GetUserByAuth(string email, string hash);
 }
